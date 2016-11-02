@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+import time,os,sys
+import commands
+
+print sys.argv[1] , sys.argv[2]
+seconds_to_sleep = 20 * 30
+test_host = '10.239.131.213'
+host_com = '/dev/ttyS0'
+
+chk_cmd='''ping  -c 100 ''' + test_host
+reb_cmd='''serial_reboot ''' + host_com
+while 1:
+	stat,relt = commands.getstatusoutput(chk_cmd)
+	print stat
+	print relt
+	if stat == 0 :
+		print "nightly test is running ..."
+        	time.sleep( seconds_to_sleep )
+	else:
+		os.system(reb_cmd)		
+

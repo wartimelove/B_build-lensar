@@ -1,0 +1,59 @@
+common.py
+def ls(str_path):
+def iif(expr,v1,v2):
+def sys_call(str_command):
+def init_repo( str_git, str_path ):
+def git_update(str_git, str_dir):
+def git_checkout(str_git, str_dir, str_commit, ):
+def get_commit_of_tag(str_git, str_dir, str_tag ):
+def tar(str_tar_filepath, str_src_dirpath, str_zip_contains='.', str_zip_exclude='.git' ):
+def build_server_ip():
+def get_xml_str(node, str_name, default=None):
+    val = default
+simplexml.py
+    def __init__(self, node):
+    def __unicode__(self):
+    def __str__(self):
+    def __getattr__(self, attr):
+    def __getitem__(self, key):
+    def __len__(self):
+    def __del__(self):
+    def __enter__(self):
+    def __exit__(self):
+    def __init__(self, node):
+    def __getitem__(self, key):
+    def __unicode__(self):
+    def __str__(self):
+    def __repr__(self):
+    def __len__(self):
+    def __del__(self):
+    def __enter__(self):
+    def __exit__(self):
+def parse(file):
+def parsestring(s):
+builder.py
+    def __init__(self, str_software_id, str_tag_or_commit='HEAD' ):
+    def make(self):
+    def get_tar_filepath(self, str_commit=None):
+    def build(self, str_tag_or_commit='HEAD' ):
+    def get_shell_code_for_install(self):
+    def get_python_code_for_install(self):
+def main():
+server.py
+def reply(str_data):
+    def gen_help_code():
+    def gen_error_code():
+    def gen_list_code(*args):
+    def gen_install_code(*args):
+    def handle(self):
+def reply(str_data):
+    def gen_help_code():
+    def gen_error_code():
+    def gen_list_code(*args):
+    def gen_install_code(*args):
+    def handle(self):
+vgt-get
+def start_tunnel(str_remoteIP, str_port):
+ssh_command.py
+def ssh_command (host, user, password, command):
+def main ():

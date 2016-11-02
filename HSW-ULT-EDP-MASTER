@@ -1,0 +1,18 @@
+[ INSTALL_ID1 ]
+HOST=HSW-ULT-EDP-dom0
+USER=root
+PASSWORD=123456
+install_env=vgt_kernel_xen_master_deb
+
+[ INSTALL_ID2 ]
+HOST=HSW-ULT-EDP-dom0
+USER=root
+PASSWORD=123456
+install_env=update_guest_os
+
+[ INSTALL_ID3 ]
+HOST=HSW-ULT-EDP-dom0
+USER=root
+PASSWORD=123456
+install_env=weekly
+

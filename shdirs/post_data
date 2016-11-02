@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+# shaohui.zheng@intel.com
+# Post log script
+#
+use LWP::UserAgent;
+use HTTP::Request::Common;
+
+# post url
+$url = "http://vmm-qa.sh.intel.com/vgt_data/php_lib/post_data.php";
+
+# if user miss some arguments
+#if (length(@ARG[2]) == 0){
+#    Usage();
+#    exit;
+#}
+
+# get user's arguments
+$ts_suite    = @ARGV[0];
+$ts_machine  = @ARGV[3];
+$file_name   = @ARGV[1];
+$ts_sesfile  = @ARGV[1];
+$summary_name   = @ARGV[2];
+$summary_file = @ARGV[2];
+
+$post_data = 
+{
+    ts_suite    => $ts_suite,
+    file_name   => $file_name,
+    ts_machine  => $ts_machine,
+    summary_name => $summary_name,
+    ts_sesfile  => ["$ts_sesfile"],
+    summary_file => ["$summary_file"]
+};
+
+my $ua = LWP::UserAgent->new();
+$ua->timeout(30);
+my $res = $ua->request(HTTP::Request::Common::POST($url,Content_Type=>'multipart/form-data;',Content=>$post_data));
+if ($res->code != 200)
+{# fail
+    print $res->status_line . "\n" . $res->content;
+    print "fail\n";
+}
+else 
+{# pass
+    print $res->content;
+    print "pass\n";
+}
+
+sub Usage()
+{
+    print "Missing some arguments\n";
+    print "Usage: post_data 'nightly/build'  'info_file' 'summary_file' 'snb/hsw'\n";
+}

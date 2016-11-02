@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+#-*- encoding: utf8 -*-
+import os.path as path
+import MySQLdb
+import sys, os , traceback
+import  xlwt
+import encodings , encodings.aliases
+import locale, datetime
+
+print locale.getdefaultlocale()
+str_cur_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
+sys.path.append( str_cur_dir)
+sys.path.append( os.path.dirname(os.path.realpath(os.path.curdir)))
+sys.path.append("/opt/")
+from sql.sql_list import *
+#import log
+from sql.log import *
+
+logg = loggingUtils('/tmp/conn.log')
+logg.debug('debug')
+
+try: 
+	conn=MySQLdb.connect(host='localhost',user='xentest',passwd='123456',port=3306)
+	cur=conn.cursor()
+	conn.select_db(sys.argv[1])
+	if len(sys.argv[1:]) == 1:
+		count=cur.execute(SUITE_LIST)
+	elif sys.argv[2] == 'pass':	
+		count=cur.execute(TESTLINK_PASS_SQL)
+	elif sys.argv[2] == 'fail':
+		count=cur.execute(TESTLINK_FAIL_SQL)
+	elif sys.argv[2] == 'block':
+		count=cur.execute(TESTLINK_BLOCK_SQL)
+	else:
+		print 'invalid parmeter'
+
+	print 'there has %s rows record' % count
+	#mes('test:%s' % count) 
+	results=cur.fetchmany(50)
+	for r in results:
+#		print r.encode("UTF-8")
+		print ('%r\t%r\t%r\t%r\t%r\t%r\t\n' %r)
+		num=4
+		wt_file(r,num)
+ 	print '=='*20 
+	os.system('''cat result_data.tmp | sed 's/<p>//' | sed 's/<\/p>//' | sed 's/&nbsp;/ /' | sed 's/&nbsp;/ /' | sed 's/L//' | sed "s/'//g" >> result_data''')
+	cur.scroll(0,mode='absolute')
+	results=cur.fetchall()
+	print len(sys.argv[2:])
+	if len(sys.argv[2:]) == 2:
+		list_id=int(sys.argv[3])	
+		for r in results:
+			print r[list_id]
+			#wt_file(r)
+
+	wb = xlwt.Workbook()
+	sheet = wb.add_sheet('sheet 1')
+	row_id=0
+	for line in open("result_data"):
+		print line, "+++"
+		row_id=row_id+1
+		print row_id
+		sheet.write(int(row_id),0,line)
+		#sheet.Cells(row_id,o).Value=line
+		
+	wb.save('result.xls')
+	cur.close()
+	conn.close()
+
+except MySQLdb.Error,e:
+	print "Mqsql Error %d: %s" % (e.args[0], e.args[1])
+	logg.error('error')
+	logg.error_sys()

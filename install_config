@@ -1,0 +1,71 @@
+[ INSTALL_ID1 ]
+IP=10.239.131.211
+USER=root
+PASSWORD=123456
+install_env=vgt_kernel_xen_deb
+
+[ INSTALL_ID2 ]
+IP=10.239.131.211
+USER=root
+PASSWORD=123456
+install_env=update_guest_os
+
+[ INSTALL_ID3 ]
+IP=10.239.131.211
+USER=root
+PASSWORD=123456
+install_env=nightly_staging
+
+[ INSTALL_ID4 ]
+IP=10.239.131.209
+USER=root
+PASSWORD=123456
+install_env=vgt_kernel_xen_deb
+
+[ INSTALL_ID5 ]
+IP=10.239.131.209
+USER=root
+PASSWORD=123456
+install_env=update_guest_os
+
+[ INSTALL_ID6 ]
+IP=10.239.131.209
+USER=root
+PASSWORD=123456
+install_env=nightly_staging
+
+[ INSTALL_ID7 ]
+IP=10.239.131.210
+USER=root
+PASSWORD=123456
+install_env=vgt_kernel_xen_deb
+
+[ INSTALL_ID8 ]
+IP=10.239.131.210
+USER=root
+PASSWORD=123456
+install_env=update_guest_os
+
+[ INSTALL_ID9 ]
+IP=10.239.131.210
+USER=root
+PASSWORD=123456
+install_env=nightly_staging
+
+[ INSTALL_ID10 ]
+IP=10.239.131.225
+USER=root
+PASSWORD=123456
+install_env=vgt_kernel_xen_deb
+
+[ INSTALL_ID11 ]
+IP=10.239.131.225
+USER=root
+PASSWORD=123456
+install_env=update_guest_os
+
+[ INSTALL_ID12 ]
+IP=10.239.131.225
+USER=root
+PASSWORD=123456
+install_env=nightly_staging

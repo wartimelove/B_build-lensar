@@ -1,0 +1,769 @@
+<?xml version="1.0" ?> 
+<config>
+  <system>
+    <root_dir>/build_server</root_dir>
+    <repos_dir>repos</repos_dir>
+    <out_dir>out</out_dir>
+  </system>
+  
+  <softwares>
+
+        <init_env>    
+	<git>git://vgt.sh.intel.com/xts.git</git>
+	<repo_dir>init-env</repo_dir>
+	<out_dir>init-env</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	./ubuntu_setup.sh;
+	</install_commands>
+	</init_env>
+
+        <display_env>    
+	<git>git://vgt.sh.intel.com/xts.git</git>
+	<repo_dir>display-env</repo_dir>
+	<out_dir>display-env</out_dir>
+	<make_commands>
+	cd $WORK_DIR;
+	echo "/home/xts/script/QRdecode4Display/lib64/" > /etc/ld.so.conf.d/QRdecode4Display.conf
+	ldconfig
+	apt-get install -y libtiff* libpng* opencv-dev* liblapack* cheese
+	ln -s /usr/lib/x86_64-linux-gnu/libtiff.so.4 /lib/libtiff.so.3
+	ln -s /usr/lib/liblapack.so /lib/liblapack.so.3
+	export http_proxy=proxy-shz.intel.com:911
+	wget http://ftp.gnu.org/gnu/gcc/gcc-4.7.3/gcc-4.7.3.tar.gz
+	tar -zxvf gcc-4.7.3.tar.gz
+	cd gcc-4.7.3
+	./contrib/download_prerequisites
+	cd ..
+	mkdir gcc-build-4.7.3
+	cd gcc-build-4.7.3
+	../gcc-4.7.3/configure --enable-checking=release --enable-languages=c,c++ --disable-multilib;
+	make -j4;
+	make install;
+	</make_commands>
+	<install_commands>
+	</install_commands>
+	</display_env>
+	
+	<vgt_kernel_xen_deb>    
+	<git>git://vt-sync.sh.intel.com/linux-vgt.git</git>
+	<repo_dir>kernel-xen-staging</repo_dir>
+	<out_dir>kernel-xen-staging</out_dir>
+	<zip_contains>*.deb</zip_contains>
+	<make_commands>
+	cd $WORK_DIR;
+	git checkout staging;
+	cp /root/build-server/tools/config.patch .;
+	patch -p1 <![CDATA[<]]> ./config.patch;
+	git clone git://vt-sync.sh.intel.com/xen-vgt.git 
+	cd xen-vgt
+	git checkout staging;
+	make clean;
+	./autogen.sh;
+	./configure;
+	sed -i "s/git:\/\/xenbits.xen.org/git:\/\/vt-sync.sh.intel.com/g" Config.mk
+        sed -i "s/http:\/\/xenbits.xen.org\/git-http/git:\/\/vt-sync.sh.intel.com/g" Config.mk
+	<!--
+	sed -i "s/git:\/\/xenbits.xen.org\/qemu-xen-4.3-testing.git/http:\/\/xenbits.xen.org\/git-http\/qemu-xen-4.3-testing.git/g" Config.mk
+	sed -i "s/git:\/\/xenbits.xen.org\/seabios.git/http:\/\/xenbits.xen.org\/git-http\/seabios.git/g" Config.mk 
+	-->
+	cd tools/;
+	./configure --prefix=/usr;
+	cd ../
+	make xen tools;
+	if [ $? -ne 0 ]; then exit 2 ;fi
+	make INSTALL_MOD_STRIP=1 install-tools;
+	if [ $? -ne 0 ]; then exit 2 ;fi
+	cd $WORK_DIR;
+	while [ ! -e deb_build.sh ]; do cp -rf /root/workspace/build-server-etc/deb_build.sh . ; sleep 1 ; done;
+	make mrproper;
+	cp config-3.11.6-dom0 .config;
+	echo "" | make oldconfig;
+	make -j8;
+	make INSTALL_MOD_STRIP=1 modules_install;
+	./deb_build.sh staging
+	git checkout master
+	</make_commands>
+	<install_commands>
+	dpkg -P `dpkg --list | grep kernel-xen | awk '{printf $2}'`
+	dpkg -i *.deb
+	</install_commands>
+	</vgt_kernel_xen_deb>
+
+	<vgt_kernel_xen_master_deb>    
+	<git>git://vt-sync.sh.intel.com/linux-vgt.git</git>
+	<repo_dir>kernel-xen-master</repo_dir>
+	<out_dir>kernel-xen-master</out_dir>
+	<zip_contains>*.deb</zip_contains>
+	<make_commands>
+	cd $WORK_DIR;
+	cp /root/build-server/tools/config.patch .;
+	patch -p1 <![CDATA[<]]> ./config.patch;
+	git clone git://vt-sync.sh.intel.com/xen-vgt.git 
+	cd xen-vgt
+	make clean;
+	./autogen.sh;
+	./configure;
+	sed -i "s/git:\/\/xenbits.xen.org/git:\/\/vt-sync.sh.intel.com/g" Config.mk
+        sed -i "s/http:\/\/xenbits.xen.org\/git-http/git:\/\/vt-sync.sh.intel.com/g" Config.mk
+	<!--
+	sed -i "s/git:\/\/xenbits.xen.org\/qemu-xen-4.3-testing.git/http:\/\/xenbits.xen.org\/git-http\/qemu-xen-4.3-testing.git/g" Config.mk
+	sed -i "s/git:\/\/xenbits.xen.org\/seabios.git/http:\/\/xenbits.xen.org\/git-http\/seabios.git/g" Config.mk 
+	-->
+	cd tools/;
+	./configure --prefix=/usr;
+	cd ../
+	make xen tools;
+	if [ $? -ne 0 ]; then exit 2 ;fi
+	make INSTALL_MOD_STRIP=1 install-tools;
+	if [ $? -ne 0 ]; then exit 2 ;fi
+	cd $WORK_DIR;
+	while [ ! -e deb_build.sh ]; do cp -rf /root/workspace/build-server-etc/deb_build.sh . ; sleep 1 ; done;
+	make mrproper;
+	cp config-3.11.6-dom0 .config;
+	echo "" | make oldconfig;
+	make -j8;
+	make INSTALL_MOD_STRIP=1 modules_install;
+	./deb_build.sh master
+	</make_commands>
+	<install_commands>
+	dpkg -P `dpkg --list | grep kernel-xen | awk '{printf $2}'`
+	dpkg -i *.deb
+	</install_commands>
+	</vgt_kernel_xen_master_deb>
+
+	<linux_grub_setting>
+	<git>git@xenvgt.sh.intel.com:~/grub.git</git>
+	<repo_dir>linux-grub</repo_dir>
+	<out_dir>linux-grub</out_dir>
+	<make_commands>
+	cd $WORK_DIR;
+	while [ ! -e write_grub.sh ]; do cp -rf grub/write_grub.sh . ; sleep 1 ; done
+	</make_commands>
+	<install_commands>
+        ./write_grub.sh
+	</install_commands>
+	</linux_grub_setting>	
+
+	<get_native_info>
+	<git>git@xenvgt.sh.intel.com:~/script.git</git>
+	<repo_dir>get-native-info</repo_dir>
+	<out_dir>get-native-info</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/get-native-info/script/install_common.sh
+	boot_once.sh mkdir -p /home/img
+	boot_once.sh mkdir -p /GFX/
+	boot_once.sh /build_server/repos/get-native-info/autotest/boot2nd_ub.sh;
+	sh +x /build_server/repos/get-native-info/tools/switch_grub.sh 0;
+	boot_once.sh mount /home/img/test.img /GFX/ -o loop;
+	boot_once.sh mkdir -p /GFX/log/native/
+	boot_once.sh /build_server/repos/get-native-info/tools/get_edid.sh /GFX/log/native/edid;
+	boot_once.sh /build_server/repos/get-native-info/tools/switch_grub.sh 1 ;
+	boot_once.sh reboot;
+	</install_commands>
+	</get_native_info>
+
+	<get_native_info_win>
+	<git>git@xenvgt.sh.intel.com:~/script</git>
+	<repo_dir>get-native-info-win</repo_dir>
+	<out_dir>get-native-info-win</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/get-native-info-win/script/install_common.sh
+	boot_once.sh mkdir -p /home/img
+	boot_once.sh mkdir -p /GFX/
+	boot_once.sh /build_server/repos/get-native-info-win/autotest/boot2nd_win.sh;
+	sh +x /build_server/repos/get-native-info-win/tools/switch_grub.sh 0;
+	boot_once.sh mount /home/img/test.img /GFX/ -o loop;
+	boot_once.sh mkdir -p /GFX/log/native/
+	boot_once.sh /build_server/repos/get-native-info-win/tools/get_edid.sh /GFX/log/native/edid;
+	boot_once.sh /build_server/repos/get-native-info-win/tools/switch_grub.sh 2 ;
+	boot_once.sh reboot;
+	reboot;
+	</install_commands>
+	</get_native_info_win>
+
+	<download_img>
+	<git>git://vgt.sh.intel.com/xts.git</git>
+	<repo_dir>download-image</repo_dir>
+	<out_dir>download-image</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/download-image/script/install_common.sh
+	sh /build_server/repos/download-image/config/setup_xenbr.sh
+	download_img.sh 2ndVM
+	download_img.sh 3rdVM
+	</install_commands>
+	</download_img>
+
+ 	<download_img_win>
+ 	<git>git://vgt.sh.intel.com/xts.git</git>
+ 	<repo_dir>download-image-win</repo_dir>
+ 	<out_dir>download-image-win</out_dir>
+ 	<make_commands>
+ 	</make_commands>
+ 	<install_commands>
+	sh /build_server/repos/download-image-win/script/install_common.sh
+ 	download_img.sh  -s i686 win7
+ 	</install_commands>
+ 	</download_img_win>
+
+
+	<update_guest_os>
+	<git>git://vgt.sh.intel.com/xts.git</git>
+	<repo_dir>update-guest-os</repo_dir>
+	<out_dir>update-guest-os</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/update-guest-os/script/script/install_common.sh
+	update_img_kernel.sh /home/img/ubuntu-64.img
+	</install_commands>
+	</update_guest_os>
+
+
+	<monthly>
+	<git>git://vt-repo.sh.intel.com/xts.git</git>
+	<repo_dir>monthly</repo_dir>
+	<out_dir>monthly</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/monthly/script/script/install_common.sh
+	rm -rf /root/xts
+	mkdir -p /root/xts
+	git clone git://vt-repo.sh.intel.com/xts.git /root/xts
+	mkdir -p /usr/local/nightly
+	touch /usr/local/nightly/vm_life
+	touch /usr/local/nightly/abat
+	touch /usr/local/nightly/media
+	touch /usr/local/nightly/xen_api
+	touch /usr/local/nightly/switch
+	touch /usr/local/nightly/render_switch
+	touch /usr/local/nightly/win_vm
+	touch /usr/local/nightly/power
+	touch /usr/local/nightly/heaven
+	touch /usr/local/nightly/vm_generic
+	touch /usr/local/nightly/sysmark
+	echo `datei +%Y/%m/%d` > /usr/local/nightly/.date
+	boot_once.sh sleep 20
+	boot_once.sh /build_server/repos/monthly/script/config/setup_xenbr.sh
+	boot_once.sh sleep 10
+	boot_once.sh /GFX/update.sh
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` win_vm;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` vm_life;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` abat;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` ren;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` media;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` xen_api;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` switch;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` render_switch;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` power;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` heaven;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` pig;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` oglc;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` vm_generic;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` sysmark;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` pig;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` oglc;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` display;
+	boot_once.sh /build_server/repos/monthly/script/script/send_summay.sh `dpkg --list | grep kernel-xen | awk '{printf $2}' | cut -d "-" -f 3`;
+	boot_once.sh /build_server/repos/monthly/script/tools/switch_grub.sh 3 ;
+	cd lw-connect/dom0-socket/;
+	make uninstall;
+	make;
+	make install;
+	/usr/local/bin/update_win_image.sh /home/img/win7-32-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win7-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win8.1-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/winxp-32.img
+	</install_commands>
+	</monthly>
+
+	<monthly_a>
+	<git>git://vt-repo.sh.intel.com/xts.git</git>
+	<repo_dir>monthly-a</repo_dir>
+	<out_dir>monthly-a</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/monthly-a/script/script/install_common.sh
+	rm -rf /root/xts
+	mkdir -p /root/xts
+	git clone git://vt-repo.sh.intel.com/xts.git /root/xts
+	mkdir -p /usr/local/nightly
+	touch /usr/local/nightly/vm_life
+	touch /usr/local/nightly/abat
+	touch /usr/local/nightly/media
+	touch /usr/local/nightly/xen_api
+	touch /usr/local/nightly/switch
+	touch /usr/local/nightly/render_switch
+	touch /usr/local/nightly/win_vm
+	touch /usr/local/nightly/power
+	touch /usr/local/nightly/heaven
+	touch /usr/local/nightly/vm_generic
+	touch /usr/local/nightly/sysmark
+	echo `datei +%Y/%m/%d` > /usr/local/nightly/.date
+	boot_once.sh sleep 20
+	boot_once.sh /build_server/repos/monthly-a/script/config/setup_xenbr.sh
+	boot_once.sh sleep 10
+	boot_once.sh /GFX/update.sh
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` win_vm;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` vm_life;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` abat;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` ren;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` media;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` xen_api;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` switch;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` render_switch;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` power;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` heaven;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` pig;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` oglc;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` vm_generic;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` sysmark;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` pig;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` oglc;
+	boot_once.sh /build_server/repos/monthly-a/script/script/send_summay.sh `dpkg --list | grep kernel-xen | awk '{printf $2}' | cut -d "-" -f 3`;
+	boot_once.sh /build_server/repos/monthly-a/script/tools/switch_grub.sh 3 ;
+	cd lw-connect/dom0-socket/;
+	make uninstall;
+	make;
+	make install;
+	update_img_kernel.sh /home/img/ubuntu-64.img
+	/usr/local/bin/update_win_image.sh /home/img/win7-32-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win7-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win8.1-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/winxp-32.img
+	</install_commands>
+	</monthly_a>
+
+	<weekly>
+	<git>git://vt-repo.sh.intel.com/xts.git</git>
+	<repo_dir>weekly</repo_dir>
+	<out_dir>weekly</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/weekly/script/script/install_common.sh
+	rm -rf /root/xts
+	mkdir -p /root/xts
+	git clone git://vt-repo.sh.intel.com/xts.git /root/xts
+	mkdir -p /usr/local/nightly
+	touch /usr/local/nightly/vm_life
+	touch /usr/local/nightly/abat
+	touch /usr/local/nightly/media
+	touch /usr/local/nightly/xen_api
+	touch /usr/local/nightly/switch
+	touch /usr/local/nightly/render_switch
+	touch /usr/local/nightly/win_vm
+	touch /usr/local/nightly/power
+	touch /usr/local/nightly/heaven
+	touch /usr/local/nightly/vm_generic
+	touch /usr/local/nightly/sysmark
+	boot_once.sh sleep 20
+	boot_once.sh /build_server/repos/weekly/script/config/setup_xenbr.sh
+	boot_once.sh sleep 10
+	boot_once.sh /GFX/update.sh
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` win_vm;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` vm_life;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` abat;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` ren;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` media;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` xen_api;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` switch;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` render_switch;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` power;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` heaven;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` pig;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` oglc;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` vm_generic;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` sysmark;
+	boot_once.sh /GFX/script/nightly_test.sh  -t `date +%Y/%m/%d` display;
+	boot_once.sh /build_server/repos/weekly/script/script/send_summay.sh `dpkg --list | grep kernel-xen | awk '{printf $2}' | cut -d "-" -f 3`;
+	boot_once.sh /build_server/repos/weekly/script/tools/switch_grub.sh 3 ;
+	cd lw-connect/dom0-socket/;
+	make uninstall;
+	make;
+	make install;
+	/usr/local/bin/update_win_image.sh /home/img/win7-32-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win7-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win8.1-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/winxp-32.img
+	</install_commands>
+	</weekly>
+
+	<weekly_a>
+	<git>git://vt-repo.sh.intel.com/xts.git</git>
+	<repo_dir>weekly-a</repo_dir>
+	<out_dir>weekly-a</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/weekly-a/script/script/install_common.sh
+	rm -rf /root/xts
+	mkdir -p /root/xts
+	git clone git://vt-repo.sh.intel.com/xts.git /root/xts
+	mkdir -p /usr/local/nightly
+	touch /usr/local/nightly/vm_life
+	touch /usr/local/nightly/abat
+	touch /usr/local/nightly/media
+	touch /usr/local/nightly/xen_api
+	touch /usr/local/nightly/switch
+	touch /usr/local/nightly/render_switch
+	touch /usr/local/nightly/win_vm
+	touch /usr/local/nightly/power
+	touch /usr/local/nightly/heaven
+	touch /usr/local/nightly/vm_generic
+	touch /usr/local/nightly/sysmark
+	boot_once.sh sleep 20
+	boot_once.sh /build_server/repos/weekly-a/script/config/setup_xenbr.sh
+	boot_once.sh sleep 10
+	boot_once.sh /GFX/update.sh
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` win_vm;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` vm_life;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` abat;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` ren;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` media;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` xen_api;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` switch;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` render_switch;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` power;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` heaven;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` pig;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` oglc;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` vm_generic;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh ;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` sysmark;
+	boot_once.sh /build_server/repos/weekly-a/script/script/send_summay.sh `dpkg --list | grep kernel-xen | awk '{printf $2}' | cut -d "-" -f 3`;
+	boot_once.sh /build_server/repos/weekly-a/script/tools/switch_grub.sh 3 ;
+	cd lw-connect/dom0-socket/;
+	make uninstall;
+	make;
+	make install;
+	update_img_kernel.sh /home/img/ubuntu-64.img
+	/usr/local/bin/update_win_image.sh /home/img/win7-32-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win7-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win8.1-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/winxp-32.img
+	</install_commands>
+	</weekly_a>
+
+	<nightly>
+	<git>git://vt-repo.sh.intel.com/xts.git</git>
+	<repo_dir>nightly</repo_dir>
+	<out_dir>nightly</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/nightly/script/script/install_common.sh
+	rm -rf /root/xts
+	mkdir -p /root/xts
+	git clone git://vt-repo.sh.intel.com/xts.git /root/xts
+	mkdir -p /usr/local/nightly
+	touch /usr/local/nightly/vm_life
+	touch /usr/local/nightly/abat
+	touch /usr/local/nightly/media
+	touch /usr/local/nightly/xen_api
+	touch /usr/local/nightly/switch
+	touch /usr/local/nightly/render_switch
+	touch /usr/local/nightly/win_vm
+	touch /usr/local/nightly/vm_generic
+	touch /usr/local/nightly/heaven
+	touch /usr/local/nightly/power
+	boot_once.sh sleep 20
+	boot_once.sh /build_server/repos/nightly/script/config/setup_xenbr.sh
+	boot_once.sh sleep 10
+	boot_once.sh /GFX/update.sh
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` win_vm;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` vm_life;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` switch;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` abat;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` ren;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` media;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` xen_api;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` render_switch;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` heaven;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` power;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` vm_generic;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` display;
+	boot_once.sh /build_server/repos/nightly/script/script/send_summay.sh `dpkg --list | grep kernel-xen | awk '{printf $2}' | cut -d "-" -f 3`;
+	boot_once.sh /build_server/repos/nightly/script/tools/switch_grub.sh 3 ;
+	cd lw-connect/dom0-socket/;
+	make uninstall;
+	make;
+	make install;
+	/usr/local/bin/update_win_image.sh /home/img/win7-32-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win7-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win8.1-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/winxp-32.img
+	reboot
+	</install_commands>
+	</nightly>
+
+	<nightly_a>
+	<git>git://vt-repo.sh.intel.com/xts.git</git>
+	<repo_dir>nightly-a</repo_dir>
+	<out_dir>nightly-a</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/nightly-a/script/script/install_common.sh
+	rm -rf /root/xts
+	mkdir -p /root/xts
+	git clone git://vt-repo.sh.intel.com/xts.git /root/xts
+	mkdir -p /usr/local/nightly
+	touch /usr/local/nightly/vm_life
+	touch /usr/local/nightly/abat
+	touch /usr/local/nightly/media
+	touch /usr/local/nightly/xen_api
+	touch /usr/local/nightly/switch
+	touch /usr/local/nightly/render_switch
+	touch /usr/local/nightly/win_vm
+	touch /usr/local/nightly/vm_generic
+	touch /usr/local/nightly/heaven
+	touch /usr/local/nightly/power
+	boot_once.sh sleep 20
+	boot_once.sh /build_server/repos/nightly-a/script/config/setup_xenbr.sh
+	boot_once.sh sleep 10
+	boot_once.sh /GFX/update.sh
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` win_vm;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` vm_life;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` switch;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` abat;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` ren;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` media;
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` xen_api;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 1 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` abat;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` ren;
+	boot_once.sh /usr/local/bin/run_vm_nightly.sh 2 -t `date +%Y/%m/%d` media;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` render_switch;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` heaven;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` power;
+	boot_once.sh /usr/local/bin/destroy_all_vm.sh 
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` vm_generic;
+	boot_once.sh /build_server/repos/nightly-a/script/script/send_summay.sh `dpkg --list | grep kernel-xen | awk '{printf $2}' | cut -d "-" -f 3`;
+	boot_once.sh /build_server/repos/nightly-a/script/tools/switch_grub.sh 3 ;
+	cd lw-connect/dom0-socket/;
+	make uninstall;
+	make;
+	make install;
+	/usr/local/bin/update_win_image.sh /home/img/win7-32-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win7-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/win8.1-64-hsw.img
+	/usr/local/bin/update_win_image.sh /home/img/winxp-32.img
+	reboot
+	</install_commands>
+	</nightly_a>
+
+	<stress_test>
+	<git>git://vt-repo.sh.intel.com/xts.git</git>
+	<repo_dir>stress-test</repo_dir>
+	<out_dir>stress-test</out_dir>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh /build_server/repos/stess-test/script/install_common.sh
+	mount /home/img/test.img /GFX -o loop
+	boot_once.sh sleep 6
+	boot_once.sh /build_server/repos/win-test/config/setup_xenbr.sh
+	boot_once.sh sleep 10
+	boot_once.sh mount /home/img/test.img /GFX -o loop
+	boot_once.sh /GFX/update_script.sh
+	boot_once.sh /GFX/component/compiler.sh
+	boot_once.sh /GFX/script/publish_key.sh
+	boot_once.sh /GFX/script/add_xgt_test.sh
+	boot_once.sh /GFX/script/install_common.sh
+	boot_once.sh /GFX/script/nightly_test.sh -t `date +%Y/%m/%d` stress_test;
+	boot_once.sh /build_server/repos/stress-test/tools/switch_grub.sh 3 ;
+	</install_commands>
+	</stress_test>
+
+	<game_cairo>
+	<git>git@xenvgt.sh.intel.com:~/xts.git</git>
+	<repo_dir>game-cairo</repo_dir>
+	<out_dir>game-cario</out_dir>
+	<description>
+	Auto run 3D game and cairo for performance test
+	</description>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	mount /home/img/test.img /GFX -o loop
+	./boot_once.sh mount /home/img/test.img /GFX -o loop
+	./boot_once.sh /GFX/update_script.sh
+	./boot_once.sh /GFX/component/compiler.sh
+	./boot_once.sh /GFX/script/publish_key.sh
+	./boot_once.sh /GFX/script/add_xgt_test.sh
+	./boot_once.sh /GFX/script/install_common.sh
+	./boot_once.sh /usr/local/bin/sendkey2vm.sh 2ndVM.hvm
+	./boot_once.sh /usr/local/bin/sendkey2vm.sh 3rdVM.hvm
+	./boot_once.sh /GFX/script/nightly_test.sh xgt 
+	mount /home/img/game.img /mnt -o loop
+	./boot_once.sh mount /home/img/game.img /mnt -o loop
+	./boot_once.sh /mnt/run3d_test.sh --update
+	./boot_once.sh /mnt/run3d_test.sh --all
+	./boot_once.sh /mnt/run2d_test.sh --update
+	./boot_once.sh /mnt/run2d_test.sh --benchmark
+	./boot_once.sh /mnt/run2d_test.sh --webkit
+	./boot_once.sh /build_server/repos/game-cairo/autotest/run_vm_game_cairo.sh 2ndVM
+	./boot_once.sh /build_server/repos/game-cairo/autotest/run_vm_game_cairo.sh 3rdVM
+	./boot_once.sh /build_server/repos/game-cairo/switch_grub.sh 1 ;
+	</install_commands>
+	</game_cairo>
+ 
+	<all1>    
+	<git>git@xenvgt.sh.intel.com:~/install-all.git</git>
+	<repo_dir>install-all</repo_dir>
+	<out_dir>install-all</out_dir>
+	<description>
+	Install GuesOS linux test env
+	</description>
+	<make_commands>
+	</make_commands>
+	<install_commands>
+	sh install_linux.sh
+	</install_commands>
+	</all1>
+        
+	<all2>
+        <git>git@xenvgt.sh.intel.com:~/install-all.git</git>
+        <repo_dir>install-all</repo_dir>
+        <out_dir>install-all</out_dir>
+        <description>
+        Install GuestOS Win test env
+        </description>
+	<make_commands>
+	</make_commands>
+        <install_commands>
+        sh install_win8.sh
+        </install_commands>
+        </all2>
+                          
+	<all3>
+        <git>git@xenvgt.sh.intel.com:~/install-all.git</git>
+        <repo_dir>install-all</repo_dir>
+        <out_dir>install-all</out_dir>
+	<make_commands>
+	</make_commands>
+        <install_commands>
+        sh install_linux_rpm.sh
+        </install_commands>
+        </all3>
+                          
+	<all4>
+        <git>git@xenvgt.sh.intel.com:~/install-all.git</git>
+        <repo_dir>install-all</repo_dir>
+        <out_dir>install-all</out_dir>
+	<make_commands>
+	</make_commands>
+        <install_commands>
+        sh install_win8_rpm.sh
+        </install_commands>
+        </all4>
+                          
+	<all5>
+        <git>git@xenvgt.sh.intel.com:~/install-all.git</git>
+        <repo_dir>install-all</repo_dir>
+        <out_dir>install-all</out_dir>
+	<make_commands>
+	</make_commands>
+        <install_commands>
+        sh install_linux_no_run_once.sh
+        </install_commands>
+        </all5>
+                          
+	<all6>
+        <git>git@xenvgt.sh.intel.com:~/install-all.git</git>
+        <repo_dir>install-all</repo_dir>
+	<make_commands>
+	</make_commands>
+        <install_commands>
+        sh install_win8_no_run_once.sh
+        </install_commands>
+        </all6>
+
+  </softwares>
+</config>
